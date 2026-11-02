@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BBC LAGUNA OPEN KNOCKOUT 5LAPS </title>
+<style>
+body{margin:0;font-family:Arial;background:#eef2f9}
+.header{background:#001a80;color:white;text-align:center;padding:18px 10px}
+.header h1{margin:0;font-size:22px}
+.header p{margin:4px 0 0;font-size:12px;opacity:.9}
+.search-card{max-width:1100px;margin:-14px auto 10px;background:white;border-radius:14px;padding:10px 14px;display:flex;gap:8px;align-items:center;box-shadow:0 4px 16px rgba(0,0,0,.15);border:2px solid #001a80}
+.search-card input{flex:1;border:none;font-size:15px;outline:none;font-weight:600}
+.badge{background:#001a80;color:white;padding:6px 12px;border-radius:18px;font-size:11px;font-weight:800;white-space:nowrap}
+.table-wrap{width:100%;margin:0 auto 20px;background:white;overflow-x:auto;overflow-y:auto;max-height:85vh;box-shadow:0 2px 10px rgba(0,0,0,.1)}
+table{border-collapse:collapse;width:max-content;min-width:100%;font-size:11px;white-space:nowrap}
+th{background:#001a80;color:white;padding:8px 8px;position:sticky;top:0;text-align:center;font-size:11px;z-index:3}
+td{padding:5px 8px;border-bottom:1px solid #e5e7eb;text-align:center}
+td.player{text-align:left;min-width:220px;white-space:normal;font-weight:700;font-size:11px;line-height:1.2}
+th.player{text-align:left;min-width:220px}
+.col-rank{width:32px;min-width:32px;max-width:32px;padding:5px 2px !important}
+td.rank-col{background:#eef2ff;color:#001a80;font-weight:900;font-size:11px}
+tr:nth-child(even){background:#eaf0ff}
+tr:hover td{background:#dbeafe !important}
+.totalS{background:#fde047 !important;font-weight:900;min-width:85px}
+.totalP{background:#86efac !important;font-weight:900;min-width:85px}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>BBC LAGUNA - OPEN KNOCKOUT (5 LAPS)</h1>
+<p>OFFICIAL SEARCHABLE RESULT - REAL FROM GOOGLE SHEET - Scroll left-right</p>
+</div>
+<div class="search-card">
+<span>🔍</span>
+<input id="q" placeholder="Search: POLI LOFT or B01015 or SAN PEDRO..." onkeyup="filt()">
+<div class="badge" id="badge">Loading 1451 from Google Sheet...</div>
+</div>
+<div class="table-wrap">
+<table>
+<thead><tr id="h"></tr></thead>
+<tbody id="b"></tbody>
+</table>
+</div>
+
+<script>
+var CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSgaoyF4UC9GOfAwwE8expR7qRacLvxUeBwfwEd_n7GPLbQ8CMVPWUXPfcCJlS94x-rJjmU5OMOSWpT/pub?output=csv";
+var data = [];
+var headers = [];
+
+function parseCSV(t){
+  var lines = t.trim().split("\n");
+  var rows = [];
+  for(var i=0;i<lines.length;i++){
+    var l = lines[i];
+    var res = [];
+    var cur = "";
+    var inq = false;
+    for(var j=0;j<l.length;j++){
+      var ch = l[j];
+      if(ch=='"'){inq=!inq;}
+      else if(ch==',' && !inq){res.push(cur);cur="";}
+      else{cur+=ch;}
+    }
+    res.push(cur);
+    for(var k=0;k<res.length;k++){res[k]=res[k].replace(/^"|"$/g,"").trim();}
+    rows.push(res);
+  }
+  return rows;
+}
+
+function renderHeader(h){
+  headers = h;
+  var html = "";
+  for(var i=0;i<h.length;i++){
+    var c = h[i];
+    var lc = c.toLowerCase();
+    if(i==0 || lc.indexOf("rank")>=0){html += '<th class="col-rank">'+c+'</th>';}
+    else if(lc.indexOf("player")>=0 || lc.indexOf("name")>=0){html += '<th class="player">'+c+'</th>';}
+    else if(lc.indexOf("total")>=0 && lc.indexOf("speed")>=0){html += '<th class="totalS">'+c+'</th>';}
+    else if(lc.indexOf("total")>=0 && lc.indexOf("point")>=0){html += '<th class="totalP">'+c+'</th>';}
+    else{html += '<th style="min-width:75px">'+c+'</th>';}
+  }
+  document.getElementById("h").innerHTML = html;
+}
+
+function draw(list){
+  document.getElementById("badge").innerText = list.length + " pigeons - REAL FROM SHEET - Rank 32px";
+  var html = "";
+  for(var r=0;r<list.length;r++){
+    var row = list[r];
+    html += "<tr>";
+    for(var i=0;i<row.length;i++){
+      var c = row[i];
+      var h = headers[i] || "";
+      var lc = h.toLowerCase();
+      if(i==0 || lc.indexOf("rank")>=0){html += '<td class="rank-col col-rank">'+c+'</td>';}
+      else if(lc.indexOf("player")>=0 || lc.indexOf("name")>=0){html += '<td class="player">'+c+'</td>';}
+      else if(lc.indexOf("total")>=0 && lc.indexOf("speed")>=0){html += '<td class="totalS">'+c+'</td>';}
+      else if(lc.indexOf("total")>=0 && lc.indexOf("point")>=0){html += '<td class="totalP">'+c+'</td>';}
+      else{html += '<td>'+c+'</td>';}
+    }
+    html += "</tr>";
+  }
+  document.getElementById("b").innerHTML = html;
+}
+
+function filt(){
+  var q = document.getElementById("q").value.toLowerCase();
+  var f = [];
+  for(var i=0;i<data.length;i++){
+    var s = data[i].join(" ").toLowerCase();
+    if(s.indexOf(q)>=0){f.push(data[i]);}
+  }
+  draw(f);
+}
+
+fetch(CSV).then(function(r){return r.text();}).then(function(t){
+  var rows = parseCSV(t);
+  renderHeader(rows[0]);
+  data = rows.slice(1);
+  draw(data);
+});
+</script>
+</body>
+</html>
